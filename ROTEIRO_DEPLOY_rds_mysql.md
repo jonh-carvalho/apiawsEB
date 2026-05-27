@@ -1,6 +1,6 @@
-# Roteiro de Deploy — Django REST API no AWS Elastic Beanstalk + RDS MySQL
+# Django REST API no AWS Elastic Beanstalk + RDS MySQL
 
-**Disciplina:** Introdução ao Cloud Computing  
+**Disciplina:** Big Data e Cloud Computing  
 **Ambiente:** Console AWS (upload via app.zip)  
 **Tempo estimado:** 40–60 minutos
 
@@ -92,7 +92,7 @@ zip -r ../app.zip . -x "*.pyc" -x "__pycache__/*" -x "db.sqlite3"
 | Modelos | **Nível gratuito** |
 | Identificador | `db-produtos` |
 | Nome do usuário principal | `admin` |
-| Senha | `123456` (anote!) |
+| Senha | `12345678` (anote!) |
 | Classe da instância | db.t3.micro |
 | Armazenamento | 20 GB (padrão) |
 | Conectividade → Acesso público | **Sim** (para facilitar o lab) |
@@ -175,10 +175,18 @@ Adicione as 6 variáveis abaixo (uma por vez, clicando no + a cada nova):
 | `RDS_PORT` | `3306` |
 | `RDS_DB_NAME` | `produtos_db` |
 | `RDS_USERNAME` | `admin` |
-| `RDS_PASSWORD` | `123456` |
+| `RDS_PASSWORD` | `12345678` |
 | `DJANGO_DEBUG` | `False` |
 
 Depois de adicionar todas as variáveis, clique em **Próximo**.
+
+#### 1. Security Group do RDS — liberar porta 3306
+Antes de fazer o deploy:
+
+RDS → db-produtos → Conectividade e segurança → clique no Security Group
+Regras de entrada → Editar → Adicionar regra:
+Tipo: MySQL/Aurora | Porta: 3306 | Origem: 0.0.0.0/0
+Salvar
 
 **Etapa 6 — Revisão** → Clique em **Enviar**
 
