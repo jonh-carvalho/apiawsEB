@@ -30,6 +30,9 @@ ENV/
 env/
 .venv
 
+# Variáveis de ambiente — NUNCA commitar o .env real
+.env
+
 # Django
 *.log
 local_settings.py

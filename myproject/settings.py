@@ -1,5 +1,10 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Carrega variáveis do arquivo .env (só tem efeito em desenvolvimento local;
+# em produção no EB as variáveis já chegam pelo ambiente do sistema)
+load_dotenv(Path(__file__).resolve().parent.parent / '.env')
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -63,30 +68,24 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 
 # ------------------------------------------------------------------ #
 #  BANCO DE DADOS                                                      #
-#  Variáveis injetadas automaticamente pelo Elastic Beanstalk + RDS   #
+#  PostgreSQL em todos os ambientes.                                   #
+#  - Local: variáveis lidas do arquivo .env                            #
+#  - Produção (EB): variáveis RDS_* injetadas pelo Elastic Beanstalk   #
+#  JSONField exige PostgreSQL para suporte nativo a JSONB.             #
 # ------------------------------------------------------------------ #
-if os.environ.get('RDS_HOSTNAME'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ['RDS_DB_NAME'],
-            'USER': os.environ['RDS_USERNAME'],
-            'PASSWORD': os.environ['RDS_PASSWORD'],
-            'HOST': os.environ['RDS_HOSTNAME'],
-            'PORT': os.environ.get('RDS_PORT', '3306'),
-            'OPTIONS': {
-                'connect_timeout': 10,
-            },
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME':     os.environ.get('RDS_DB_NAME',   'produtos_db'),
+        'USER':     os.environ.get('RDS_USERNAME',  'postgres'),
+        'PASSWORD': os.environ.get('RDS_PASSWORD',  'postgres'),
+        'HOST':     os.environ.get('RDS_HOSTNAME',  'localhost'),
+        'PORT':     os.environ.get('RDS_PORT',      '5432'),
+        'OPTIONS': {
+            'connect_timeout': 10,
+        },
     }
-else:
-    # SQLite para testes locais
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 # ------------------------------------------------------------------ #
 #  VALIDAÇÃO DE SENHA                                                  #
