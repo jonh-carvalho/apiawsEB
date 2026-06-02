@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo de Produtos — Demo JSONB</title>
+  <style>
+    /* ------------------------------------------------------------------ */
+    /*  Reset / Base                                                        */
+    /* ------------------------------------------------------------------ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Layout                                                              */
+    /* ------------------------------------------------------------------ */
+    header {
+      background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+      color: #fff;
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    header h1 { font-size: 1.3rem; font-weight: 600; }
+    header span { font-size: .8rem; opacity: .7; }
+
+    .api-bar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: .6rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .api-bar label { font-size: .8rem; font-weight: 600; color: #64748b; white-space: nowrap; }
+    .api-bar input {
+      flex: 1;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: .35rem .75rem;
+      font-size: .85rem;
+      max-width: 420px;
+    }
+    .badge-get  { background: #22c55e; color: #fff; font-size: .7rem; font-weight: 700; padding: .15rem .4rem; border-radius: 4px; }
+    .badge-post { background: #f59e0b; color: #fff; font-size: .7rem; font-weight: 700; padding: .15rem .4rem; border-radius: 4px; }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+    /* ------------------------------------------------------------------ */
+    /*  Cards                                                               */
+    /* ------------------------------------------------------------------ */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: .9rem 1.25rem;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .card-header h2 { font-size: .95rem; font-weight: 600; }
+    .card-header .icon { font-size: 1.1rem; }
+    .card-body { padding: 1.25rem; }
+
+    /* ------------------------------------------------------------------ */
+    /*  Formulário                                                          */
+    /* ------------------------------------------------------------------ */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    .field { display: flex; flex-direction: column; gap: .3rem; }
+    .field label { font-size: .78rem; font-weight: 600; color: #475569; }
+    .field input, .field textarea, .field select {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: .5rem .75rem;
+      font-size: .875rem;
+      font-family: inherit;
+      transition: border-color .15s;
+      outline: none;
+    }
+    .field input:focus, .field textarea:focus { border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15,52,96,.1); }
+    .field textarea { resize: vertical; min-height: 60px; }
+
+    /* ------------------------------------------------------------------ */
+    /*  Seção JSONB dinâmica                                                */
+    /* ------------------------------------------------------------------ */
+    .jsonb-section { margin-top: 1rem; }
+    .jsonb-section h3 {
+      font-size: .8rem;
+      font-weight: 700;
+      color: #0f3460;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: .5rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .jsonb-section h3 .chip {
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: .65rem;
+      padding: .1rem .4rem;
+      border-radius: 99px;
+      font-weight: 700;
+      letter-spacing: .03em;
+    }
+
+    .row-pair {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: .4rem;
+      align-items: center;
+    }
+    .row-pair input {
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: .4rem .6rem;
+      font-size: .82rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .row-pair input:focus { border-color: #0f3460; }
+    .row-pair select {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: .4rem .5rem;
+      font-size: .82rem;
+      background: #fff;
+      cursor: pointer;
+    }
+    .row-pair .sep { color: #94a3b8; font-size: .9rem; font-weight: 700; flex-shrink: 0; }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: .2rem;
+      border-radius: 4px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .btn-remove:hover { background: #fee2e2; }
+
+    .btn-add {
+      background: none;
+      border: 1px dashed #94a3b8;
+      border-radius: 6px;
+      color: #64748b;
+      cursor: pointer;
+      font-size: .78rem;
+      padding: .35rem .75rem;
+      width: 100%;
+      margin-top: .25rem;
+      transition: all .15s;
+    }
+    .btn-add:hover { border-color: #0f3460; color: #0f3460; background: #f0f7ff; }
+
+    /* ------------------------------------------------------------------ */
+    /*  JSON Preview                                                        */
+    /* ------------------------------------------------------------------ */
+    .preview-box {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      margin-top: .75rem;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: .75rem;
+      color: #94a3b8;
+      max-height: 160px;
+      overflow-y: auto;
+      white-space: pre;
+    }
+    .preview-box .key   { color: #7dd3fc; }
+    .preview-box .str   { color: #86efac; }
+    .preview-box .num   { color: #fbbf24; }
+    .preview-box .bool  { color: #c084fc; }
+    .preview-box .null  { color: #f87171; }
+    .preview-label { font-size: .72rem; color: #64748b; font-weight: 600; margin-top: .75rem; margin-bottom: .2rem; }
+
+    /* ------------------------------------------------------------------ */
+    /*  Botão de envio                                                      */
+    /* ------------------------------------------------------------------ */
+    .btn-submit {
+      margin-top: 1rem;
+      width: 100%;
+      background: linear-gradient(135deg, #0f3460, #16213e);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: .7rem 1rem;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn-submit:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* ------------------------------------------------------------------ */
+    /*  Resposta                                                            */
+    /* ------------------------------------------------------------------ */
+    .response-box {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: .75rem;
+      color: #94a3b8;
+      min-height: 80px;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre;
+    }
+    .status-ok   { color: #22c55e; font-weight: 700; }
+    .status-err  { color: #ef4444; font-weight: 700; }
+    .spinner { display: inline-block; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ------------------------------------------------------------------ */
+    /*  Lista de produtos                                                   */
+    /* ------------------------------------------------------------------ */
+    .product-list { display: flex; flex-direction: column; gap: .75rem; }
+
+    .product-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: .9rem 1rem;
+      position: relative;
+      transition: box-shadow .15s;
+    }
+    .product-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+
+    .product-card .pc-name {
+      font-weight: 700;
+      font-size: .9rem;
+      margin-bottom: .2rem;
+    }
+    .product-card .pc-meta {
+      font-size: .78rem;
+      color: #64748b;
+      margin-bottom: .5rem;
+    }
+    .product-card .pc-price {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f3460;
+      position: absolute;
+      top: .9rem;
+      right: 1rem;
+    }
+
+    .tags-row { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .4rem; }
+    .tag-chip {
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: .7rem;
+      padding: .15rem .5rem;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+    .tag-chip.p1 { background: #dcfce7; color: #166534; }
+    .tag-chip.p2 { background: #fef9c3; color: #854d0e; }
+    .tag-chip.p3 { background: #fee2e2; color: #991b1b; }
+
+    .atributos-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .3rem;
+      margin-top: .3rem;
+    }
+    .attr-chip {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: .7rem;
+      padding: .15rem .5rem;
+    }
+    .attr-chip .ak { color: #7c3aed; font-weight: 600; }
+    .attr-chip .av { color: #1e293b; }
+
+    .btn-load {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: .6rem 1rem;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #0f3460;
+      transition: background .15s;
+      margin-bottom: .75rem;
+    }
+    .btn-load:hover { background: #e0f2fe; }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #94a3b8;
+      font-size: .85rem;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Tabs (análises)                                                     */
+    /* ------------------------------------------------------------------ */
+    .tabs { display: flex; gap: .25rem; margin-bottom: .75rem; flex-wrap: wrap; }
+    .tab {
+      padding: .35rem .75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: .75rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+      color: #64748b;
+      transition: all .15s;
+    }
+    .tab:hover { border-color: #0f3460; color: #0f3460; }
+    .tab.active { background: #0f3460; color: #fff; border-color: #0f3460; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📦 Catálogo de Produtos</h1>
+    <span>Demo de submissão de campos JSONB — atributos &amp; tags</span>
+  </div>
+</header>
+
+<div class="api-bar">
+  <label>API Base URL</label>
+  <input id="apiBase" type="text" value="http://127.0.0.1:8000" />
+  <span class="badge-get">GET</span><code style="font-size:.78rem">/api/produtos/</code>
+  <span class="badge-post">POST</span><code style="font-size:.78rem">/api/produtos/</code>
+</div>
+
+<main>
+
+  <!-- ================================================================ -->
+  <!-- COLUNA ESQUERDA — Formulário de criação                          -->
+  <!-- ================================================================ -->
+  <div style="display:flex;flex-direction:column;gap:1rem;">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">✏️</span>
+        <h2>Novo Produto</h2>
+      </div>
+      <div class="card-body">
+        <form id="formProduto" novalidate>
+
+          <!-- Campos básicos -->
+          <div class="form-grid">
+            <div class="field full">
+              <label>Nome *</label>
+              <input id="nome" type="text" placeholder="Ex: Notebook Dell XPS 15" required />
+            </div>
+            <div class="field full">
+              <label>Descrição</label>
+              <textarea id="descricao" placeholder="Descrição detalhada do produto..."></textarea>
+            </div>
+            <div class="field">
+              <label>Preço (R$) *</label>
+              <input id="preco" type="number" step="0.01" min="0" placeholder="0.00" required />
+            </div>
+            <div class="field">
+              <label>Estoque</label>
+              <input id="estoque" type="number" min="0" placeholder="0" value="0" />
+            </div>
+            <div class="field full">
+              <label>Imagem (opcional)</label>
+              <input id="imagem" type="file" accept="image/*" />
+            </div>
+          </div>
+
+          <!-- ATRIBUTOS (JSONB — objeto) -->
+          <div class="jsonb-section">
+            <h3>
+              atributos
+              <span class="chip">JSONB object</span>
+            </h3>
+            <div id="atributosContainer"></div>
+            <button type="button" class="btn-add" onclick="addAtributo()">＋ adicionar atributo</button>
+
+            <div class="preview-label">Preview JSON — atributos</div>
+            <div class="preview-box" id="previewAtributos">{}</div>
+          </div>
+
+          <!-- TAGS (JSONB — array de objetos) -->
+          <div class="jsonb-section">
+            <h3>
+              tags
+              <span class="chip">JSONB array of objects</span>
+            </h3>
+            <div id="tagsContainer"></div>
+            <button type="button" class="btn-add" onclick="addTag()">＋ adicionar tag</button>
+
+            <div class="preview-label">Preview JSON — tags</div>
+            <div class="preview-box" id="previewTags">[]</div>
+          </div>
+
+          <button type="submit" class="btn-submit" id="btnEnviar">🚀 Criar Produto</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Resposta da API -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📡</span>
+        <h2>Resposta da API</h2>
+        <span id="statusBadge" style="margin-left:auto;font-size:.78rem;"></span>
+      </div>
+      <div class="card-body">
+        <div class="response-box" id="responseBox">Aguardando envio...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- COLUNA DIREITA — Lista de produtos e análises                    -->
+  <!-- ================================================================ -->
+  <div style="display:flex;flex-direction:column;gap:1rem;">
+
+    <!-- Lista de produtos -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📋</span>
+        <h2>Produtos Cadastrados</h2>
+      </div>
+      <div class="card-body">
+        <button class="btn-load" onclick="carregarProdutos()">🔄 Carregar produtos da API</button>
+        <div id="productList" class="product-list">
+          <div class="empty-state">Clique em "Carregar produtos" para buscar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Análises JSONB -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📊</span>
+        <h2>Análises JSONB</h2>
+      </div>
+      <div class="card-body">
+        <div class="tabs">
+          <button class="tab active" onclick="runAnalise('resumo', this)">Resumo</button>
+          <button class="tab" onclick="runAnalise('tags', this)">Tags</button>
+          <button class="tab" onclick="runAnalise('voltagem', this)">Voltagem</button>
+          <button class="tab" onclick="runAnalise('ram-notebooks', this)">RAM</button>
+          <button class="tab" onclick="runAnalise('5g', this)">5G</button>
+          <button class="tab" onclick="runAnalise('garantia', this)">Garantia</button>
+        </div>
+        <div class="response-box" id="analiseBox">Selecione uma análise acima...</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+/* -------------------------------------------------------------------- */
+/*  Utilitários                                                           */
+/* -------------------------------------------------------------------- */
+const apiBase = () => document.getElementById('apiBase').value.replace(/\/$/, '');
+
+function syntaxHighlight(json) {
+  if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+    let cls = 'num';
+    if (/^"/.test(m)) cls = /:$/.test(m) ? 'key' : 'str';
+    else if (/true|false/.test(m)) cls = 'bool';
+    else if (/null/.test(m)) cls = 'null';
+    return `<span class="${cls}">${m}</span>`;
+  });
+}
+
+function showResponse(data, status) {
+  const box = document.getElementById('responseBox');
+  const badge = document.getElementById('statusBadge');
+  box.innerHTML = syntaxHighlight(JSON.stringify(data, null, 2));
+  badge.innerHTML = status < 300
+    ? `<span class="status-ok">✔ ${status}</span>`
+    : `<span class="status-err">✖ ${status}</span>`;
+}
+
+/* -------------------------------------------------------------------- */
+/*  Atributos — pares chave / valor dinâmicos                            */
+/* -------------------------------------------------------------------- */
+let atributos = [];
+
+function addAtributo(chave = '', valor = '') {
+  const id = Date.now();
+  atributos.push({ id, chave, valor });
+  renderAtributos();
+}
+
+function removeAtributo(id) {
+  atributos = atributos.filter(a => a.id !== id);
+  renderAtributos();
+}
+
+function renderAtributos() {
+  const c = document.getElementById('atributosContainer');
+  c.innerHTML = atributos.map(a => `
+    <div class="row-pair" id="atr-${a.id}">
+      <input
+        type="text" placeholder="chave  (ex: cor)"
+        value="${a.chave}"
+        oninput="updateAtributo(${a.id},'chave',this.value)"
+      />
+      <span class="sep">:</span>
+      <input
+        type="text" placeholder="valor  (ex: preto, 32, true)"
+        value="${a.valor}"
+        oninput="updateAtributo(${a.id},'valor',this.value)"
+      />
+      <button type="button" class="btn-remove" onclick="removeAtributo(${a.id})" title="Remover">✕</button>
+    </div>
+  `).join('');
+  updatePreviewAtributos();
+}
+
+function updateAtributo(id, campo, val) {
+  const a = atributos.find(x => x.id === id);
+  if (a) { a[campo] = val; updatePreviewAtributos(); }
+}
+
+function parseValor(v) {
+  const s = v.trim();
+  if (s === 'true')  return true;
+  if (s === 'false') return false;
+  if (s === 'null')  return null;
+  if (s !== '' && !isNaN(Number(s))) return Number(s);
+  try { return JSON.parse(s); } catch { return s; }
+}
+
+function buildAtributosObj() {
+  const obj = {};
+  atributos.forEach(a => {
+    if (a.chave.trim()) obj[a.chave.trim()] = parseValor(a.valor);
+  });
+  return obj;
+}
+
+function updatePreviewAtributos() {
+  document.getElementById('previewAtributos').innerHTML =
+    syntaxHighlight(JSON.stringify(buildAtributosObj(), null, 2));
+}
+
+/* -------------------------------------------------------------------- */
+/*  Tags — array de objetos { nome, prioridade }                         */
+/* -------------------------------------------------------------------- */
+let tags = [];
+
+function addTag(nome = '', prioridade = 1) {
+  const id = Date.now();
+  tags.push({ id, nome, prioridade });
+  renderTags();
+}
+
+function removeTag(id) {
+  tags = tags.filter(t => t.id !== id);
+  renderTags();
+}
+
+function renderTags() {
+  const c = document.getElementById('tagsContainer');
+  c.innerHTML = tags.map(t => `
+    <div class="row-pair" id="tag-${t.id}">
+      <input
+        type="text" placeholder='nome  (ex: "eletrônico")'
+        value="${t.nome}"
+        oninput="updateTag(${t.id},'nome',this.value)"
+      />
+      <select onchange="updateTag(${t.id},'prioridade',Number(this.value))">
+        <option value="1" ${t.prioridade==1?'selected':''}>⭐ Alta (1)</option>
+        <option value="2" ${t.prioridade==2?'selected':''}>🔶 Média (2)</option>
+        <option value="3" ${t.prioridade==3?'selected':''}>🔷 Baixa (3)</option>
+      </select>
+      <button type="button" class="btn-remove" onclick="removeTag(${t.id})" title="Remover">✕</button>
+    </div>
+  `).join('');
+  updatePreviewTags();
+}
+
+function updateTag(id, campo, val) {
+  const t = tags.find(x => x.id === id);
+  if (t) { t[campo] = val; updatePreviewTags(); }
+}
+
+function buildTagsArray() {
+  return tags
+    .filter(t => t.nome.trim())
+    .map(t => ({ nome: t.nome.trim(), prioridade: t.prioridade }));
+}
+
+function updatePreviewTags() {
+  document.getElementById('previewTags').innerHTML =
+    syntaxHighlight(JSON.stringify(buildTagsArray(), null, 2));
+}
+
+/* -------------------------------------------------------------------- */
+/*  Envio do formulário                                                   */
+/* -------------------------------------------------------------------- */
+document.getElementById('formProduto').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const nome   = document.getElementById('nome').value.trim();
+  const preco  = document.getElementById('preco').value.trim();
+  if (!nome || !preco) {
+    alert('Nome e Preço são obrigatórios.');
+    return;
+  }
+
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner">⟳</span> Enviando...';
+  document.getElementById('responseBox').innerHTML = '<span class="spinner">⟳</span> Aguardando resposta...';
+  document.getElementById('statusBadge').innerHTML = '';
+
+  const imagemInput = document.getElementById('imagem');
+  const temImagem   = imagemInput.files.length > 0;
+
+  let body, headers = {};
+
+  if (temImagem) {
+    // multipart/form-data — campos JSONB enviados como string JSON
+    const fd = new FormData();
+    fd.append('nome',      nome);
+    fd.append('descricao', document.getElementById('descricao').value);
+    fd.append('preco',     preco);
+    fd.append('estoque',   document.getElementById('estoque').value || 0);
+    fd.append('imagem',    imagemInput.files[0]);
+    fd.append('atributos', JSON.stringify(buildAtributosObj()));
+    fd.append('tags',      JSON.stringify(buildTagsArray()));
+    body = fd;
+    // Não definir Content-Type — o browser seta com boundary automaticamente
+  } else {
+    // application/json — campos JSONB como objetos nativos
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify({
+      nome,
+      descricao: document.getElementById('descricao').value,
+      preco:     parseFloat(preco),
+      estoque:   parseInt(document.getElementById('estoque').value) || 0,
+      atributos: buildAtributosObj(),
+      tags:      buildTagsArray(),
+    });
+  }
+
+  try {
+    const res = await fetch(`${apiBase()}/api/produtos/`, { method: 'POST', headers, body });
+    const data = await res.json();
+    showResponse(data, res.status);
+    if (res.ok) {
+      // Limpa o formulário após sucesso
+      document.getElementById('formProduto').reset();
+      atributos = []; tags = [];
+      renderAtributos(); renderTags();
+    }
+  } catch (err) {
+    document.getElementById('responseBox').innerHTML =
+      `<span class="status-err">Erro de conexão: ${err.message}\n\nVerifique se a API está em execução em:\n${apiBase()}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Criar Produto';
+  }
+});
+
+/* -------------------------------------------------------------------- */
+/*  Listagem de produtos                                                  */
+/* -------------------------------------------------------------------- */
+async function carregarProdutos() {
+  const list = document.getElementById('productList');
+  list.innerHTML = '<div class="empty-state"><span class="spinner">⟳</span> Carregando...</div>';
+
+  try {
+    const res  = await fetch(`${apiBase()}/api/produtos/`);
+    const data = await res.json();
+
+    const produtos = Array.isArray(data) ? data : (data.results || []);
+    if (!produtos.length) {
+      list.innerHTML = '<div class="empty-state">Nenhum produto cadastrado ainda.</div>';
+      return;
+    }
+
+    list.innerHTML = produtos.map(p => {
+      // Tags
+      const tagsHtml = (p.tags || []).map(t => {
+        const nome  = typeof t === 'string' ? t : t.nome;
+        const prio  = typeof t === 'object' ? t.prioridade : 1;
+        return `<span class="tag-chip p${prio}">${nome}</span>`;
+      }).join('');
+
+      // Atributos (mostra até 6 chaves)
+      const atr = p.atributos || {};
+      const atributosHtml = Object.entries(atr).slice(0, 6).map(([k, v]) => {
+        const display = typeof v === 'object' ? JSON.stringify(v) : String(v);
+        return `<span class="attr-chip"><span class="ak">${k}</span>: <span class="av">${display}</span></span>`;
+      }).join('');
+
+      const extras = Object.keys(atr).length > 6
+        ? `<span class="attr-chip" style="color:#64748b">+${Object.keys(atr).length - 6} mais</span>` : '';
+
+      return `
+        <div class="product-card">
+          <div class="pc-name">${p.nome}</div>
+          <div class="pc-price">R$ ${parseFloat(p.preco).toFixed(2)}</div>
+          <div class="pc-meta">Estoque: ${p.estoque} un. · ID: ${p.id}</div>
+          ${tagsHtml ? `<div class="tags-row">${tagsHtml}</div>` : ''}
+          ${atributosHtml ? `<div class="atributos-grid">${atributosHtml}${extras}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    list.innerHTML = `<div class="empty-state" style="color:#ef4444">Erro: ${err.message}</div>`;
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/*  Análises JSONB                                                        */
+/* -------------------------------------------------------------------- */
+async function runAnalise(endpoint, tabEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+
+  const box = document.getElementById('analiseBox');
+  box.innerHTML = '<span class="spinner">⟳</span> Consultando...';
+
+  try {
+    const res  = await fetch(`${apiBase()}/api/analise/${endpoint}/`);
+    const data = await res.json();
+    box.innerHTML = syntaxHighlight(JSON.stringify(data, null, 2));
+  } catch (err) {
+    box.innerHTML = `<span class="status-err">Erro: ${err.message}</span>`;
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/*  Inicialização                                                         */
+/* -------------------------------------------------------------------- */
+// Exemplo pré-carregado para facilitar o demo em aula
+addAtributo('cor', 'preto');
+addAtributo('voltagem', 'bivolt');
+addAtributo('garantia_anos', '1');
+addTag('eletrônico', 1);
+addTag('promoção', 2);
+</script>
+</body>
+</html>
