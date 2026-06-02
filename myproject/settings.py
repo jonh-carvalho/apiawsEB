@@ -63,17 +63,19 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 
 # ------------------------------------------------------------------ #
 #  BANCO DE DADOS                                                      #
+#  PostgreSQL em produção (RDS) — SQLite apenas para testes locais.   #
 #  Variáveis injetadas automaticamente pelo Elastic Beanstalk + RDS   #
+#  JSONField exige PostgreSQL para suporte nativo a JSONB.             #
 # ------------------------------------------------------------------ #
 if os.environ.get('RDS_HOSTNAME'):
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.environ['RDS_DB_NAME'],
             'USER': os.environ['RDS_USERNAME'],
             'PASSWORD': os.environ['RDS_PASSWORD'],
             'HOST': os.environ['RDS_HOSTNAME'],
-            'PORT': os.environ.get('RDS_PORT', '3306'),
+            'PORT': os.environ.get('RDS_PORT', '5432'),
             'OPTIONS': {
                 'connect_timeout': 10,
             },
