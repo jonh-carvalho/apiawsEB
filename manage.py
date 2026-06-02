@@ -3,6 +3,9 @@
 import os
 import sys
 
+from dotenv import load_dotenv
+load_dotenv()  # carrega o .env antes de qualquer configuração do Django
+
 
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
