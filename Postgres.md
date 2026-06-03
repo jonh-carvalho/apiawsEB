@@ -42,7 +42,7 @@ postgres --version
 ## 4. Inicializar o Cluster de Dados
 
 1. Abra o terminal como **Administrador**.
-2. Defina onde os dados serão salvos (ex: `C:\postgres_data`).
+2. Defina onde os dados serão salvos (ex: `C:\postgres\data`).
 3. Execute o comando de inicialização:
 
 ```cmd
@@ -59,7 +59,7 @@ initdb -D "C:\postgres\data" -U postgres -A scram-sha-256 -W
 
 ## 5. Configurar a Variável PGDATA (Produtividade)
 
-Para evitar ter que digitar `-D "C:\postgres_data"` em todos os comandos futuros, adicione uma variável de ambiente no Windows:
+Para evitar ter que digitar `-D "C:\postgres\data"` em todos os comandos futuros, adicione uma variável de ambiente no Windows:
 * **Nome:** `PGDATA`
 * **Valor:** `C:\postgres\data`
 
