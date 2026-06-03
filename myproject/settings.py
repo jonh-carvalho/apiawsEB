@@ -31,11 +31,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'storages',
     'api',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',   # serve arquivos estáticos
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -45,6 +47,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+       "https://example.com",
+       "https://sub.example.com",
+       "http://localhost:3001",  # Exemplo para um app local
+   ]
 
 ROOT_URLCONF = 'myproject.urls'
 
